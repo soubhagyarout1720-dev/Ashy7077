@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Future Plus – MBA Matcher (with Preferred Colleges)</title>
+    <title>Future Plus – MBA Matcher (top 3-5 colleges)</title>
     <style>
-        /* (Same CSS as previous version – keeps the clean, professional look) */
+        /* (Same clean CSS as before – keeps layout consistent) */
         * {
             box-sizing: border-box;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -251,27 +251,34 @@
             border-radius: 40px;
             text-align: center;
         }
+        .budget-note {
+            font-size: 0.85rem;
+            color: #1d4e89;
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
         <h1>🎓 Future Plus · MBA Matchmaker</h1>
-        <p>Select budget, cities & priorities – get your top 3 (with preferred colleges boosted)</p>
+        <p>Select budget, cities & priorities – get your top 3‑5 colleges (cumulative budget ranges)</p>
     </div>
 
     <div class="card">
-        <!-- Budget Range -->
+        <!-- Budget Range (cumulative) -->
         <div class="filter-section">
             <div class="filter-group">
                 <h3>💰 Budget Range (final fees)</h3>
                 <div class="budget-options" id="budgetGroup">
                     <label><input type="radio" name="budget" value="0-8" checked> Up to ₹8L</label>
-                    <label><input type="radio" name="budget" value="8-10"> ₹8L – ₹10L</label>
-                    <label><input type="radio" name="budget" value="10-15"> ₹10L – ₹15L</label>
-                    <label><input type="radio" name="budget" value="15-20"> ₹15L – ₹20L</label>
+                    <label><input type="radio" name="budget" value="8-10"> ₹8L – ₹10L (shows all ≤₹10L)</label>
+                    <label><input type="radio" name="budget" value="10-15"> ₹10L – ₹15L (shows all ≤₹15L)</label>
+                    <label><input type="radio" name="budget" value="15-20"> ₹15L – ₹20L (shows all ≤₹20L)</label>
                     <label><input type="radio" name="budget" value="20-above"> Above ₹20L</label>
                 </div>
+                <div class="budget-note">⭐ Each range includes colleges up to its upper limit (except "Above ₹20L")</div>
             </div>
 
             <!-- Location (Cities) -->
@@ -303,8 +310,8 @@
             </div>
         </div>
 
-        <button class="action-btn" id="findBtn">🔍 Find my top 3</button>
-        <p style="text-align:center; margin-top:1rem; color:#1d4e89; font-weight:500;">⭐ Preferred colleges (EIILM, CBS, United World, Praxis, Izee, ABBS, RCM, KCM, Alliance, Presidency, PIBM, IIMS, DY Patil, Lexicon MILE, Lloyd, GIMS, JIMS, GL Bajaj) receive a 20% score boost.</p>
+        <button class="action-btn" id="findBtn">🔍 Find my top colleges</button>
+        <p style="text-align:center; margin-top:1rem; color:#1d4e89; font-weight:500;">⭐ Preferred colleges (list updated – Lexicon MILE removed) receive a 20% score boost.</p>
     </div>
 
     <div id="resultsArea">
@@ -316,7 +323,7 @@
 
 <script>
 (function() {
-    // ----- College data (same as before, 60 rows) -----
+    // ----- College data (unchanged) -----
     const rawColleges = [
         ["CBS Kolkata","Kolkata","6.95","6.85","147","90","5","B++","Google 360+HubSpot","3"],
         ["EIILM Kolkata","Kolkata","7.25","7.15","131","85","4","B++","Google Digital","3"],
@@ -396,7 +403,7 @@
         certCount: r[8] ? r[8].split('+').length : 0
     }));
 
-    // ----- List of preferred colleges (exact names as in data) -----
+    // ----- Preferred colleges (Lexicon MILE removed) -----
     const preferredNames = [
         // Kolkata
         "CBS Kolkata",
@@ -414,16 +421,14 @@
         "PIBM",
         "IIMS Pune",
         "DY Patil Reg",
-        "Lexicon MILE",
+        // Lexicon MILE removed
         // Delhi NCR
         "Lloyd Reg",
         "GIMS",
         "JIMS Kalkaji",
         "GL Bajaj"
-        // (Jaipuria not in data, so omitted)
     ];
 
-    // Create a Set for fast lookup
     const preferredSet = new Set(preferredNames);
     const PREFERRED_MULTIPLIER = 1.20; // 20% boost
 
@@ -440,7 +445,7 @@
         return 2.0;
     }
 
-    // Precompute min/max for normalization (over all colleges)
+    // Precompute min/max for normalization
     const stats = {
         placement: { min: 100, max: 0 },
         roi: { min: 1000, max: 0 },
@@ -472,22 +477,28 @@
         return (value - min) / (max - min);
     }
 
-    // ----- Filtering and scoring (with preferred multiplier) -----
+    // ----- Filtering and scoring (with cumulative budget) -----
     function getTopColleges(selectedCriteria, budgetRange, selectedCities) {
-        // Parse budget
-        let minFee = 0, maxFee = Infinity;
-        if (budgetRange === '0-8') { minFee = 0; maxFee = 8; }
-        else if (budgetRange === '8-10') { minFee = 8; maxFee = 10; }
-        else if (budgetRange === '10-15') { minFee = 10; maxFee = 15; }
-        else if (budgetRange === '15-20') { minFee = 15; maxFee = 20; }
-        else if (budgetRange === '20-above') { minFee = 20; maxFee = Infinity; }
+        // Cumulative budget logic
+        let maxFee;
+        if (budgetRange === '0-8') maxFee = 8;
+        else if (budgetRange === '8-10') maxFee = 10;
+        else if (budgetRange === '10-15') maxFee = 15;
+        else if (budgetRange === '15-20') maxFee = 20;
+        else if (budgetRange === '20-above') maxFee = Infinity; // >20, handled below
 
-        // Filter by city and budget
-        let filtered = colleges.filter(c => 
-            selectedCities.includes(c.city) && 
-            c.finalFees >= minFee && 
-            c.finalFees <= maxFee
-        );
+        let filtered;
+        if (budgetRange === '20-above') {
+            // Above 20L: fees > 20
+            filtered = colleges.filter(c => 
+                selectedCities.includes(c.city) && c.finalFees > 20
+            );
+        } else {
+            // All other ranges: fees <= maxFee
+            filtered = colleges.filter(c => 
+                selectedCities.includes(c.city) && c.finalFees <= maxFee
+            );
+        }
 
         if (filtered.length === 0) return [];
 
@@ -508,15 +519,13 @@
                 }
             });
 
-            // Apply multiplier if college is in preferred set
             const finalScore = preferredSet.has(college.name) ? rawScore * PREFERRED_MULTIPLIER : rawScore;
-
             return { college, score: finalScore };
         });
 
-        // Sort descending by final score
         scored.sort((a, b) => b.score - a.score);
-        return scored.slice(0, 3).map(item => item.college);
+        // Show top 5 colleges (or all if fewer than 5)
+        return scored.slice(0, 5).map(item => item.college);
     }
 
     // ----- Render college cards -----
@@ -578,16 +587,16 @@
             return;
         }
 
-        const top3 = getTopColleges(selectedCriteria, budgetRange, selectedCities);
-        renderColleges(top3);
+        const topColleges = getTopColleges(selectedCriteria, budgetRange, selectedCities);
+        renderColleges(topColleges);
     });
 
-    // ----- Initial load (default: budget 0-8, all cities, placement/roi/ranking) -----
+    // ----- Initial load -----
     window.addEventListener('load', () => {
         const defaultCriteria = ['placement', 'roi', 'ranking'];
         const defaultCities = ['Kolkata','Bangalore','Hyderabad','Pune','Delhi NCR','Mumbai','Bhubaneswar','Dehradun'];
-        const top3 = getTopColleges(defaultCriteria, '0-8', defaultCities);
-        renderColleges(top3);
+        const topColleges = getTopColleges(defaultCriteria, '0-8', defaultCities);
+        renderColleges(topColleges);
     });
 })();
 </script>
